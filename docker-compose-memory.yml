@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  bowling:
+    image: fahsi/bowling-api:1.0-SNAPSHOT
+    environment:
+      - STORAGE_DB=postgres
+    command: java -Dstorage.db=${STORAGE_DB:-memory} -jar /opt/docker/bin/bowling
+    network_mode: host
+
+
+

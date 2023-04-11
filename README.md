@@ -95,8 +95,13 @@ gameSetId: Foreign key referencing the associated BowlingGroupGame (if applicabl
 
 #### Production Run
 - API runs on port 8086 and Postgres on 5432
-- run production on Postgres : docker-compose up &                         // postgres & bowling containers
-- run production on H2       : STORAGE_DB=memory docker-compose up bowling //bowling container only
+- run production on Postgres : docker-compose up              // postgres & bowling containers
+- run production on H2       : docker-compose -f docker-compose.memory.yml up  //bowling container only
+- to stop : same command with down
+
+##### Note:
+- we could use docker profiles, i am using an old version with no profiles support. so for now i opted for two docker compose files solution.
+
 ##### Troubleshooting 
 - check if port 5432 is in use (before running the app) : sudo lsof -i :5432
   
