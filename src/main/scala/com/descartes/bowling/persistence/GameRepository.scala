@@ -3,7 +3,7 @@ package com.descartes.bowling.persistence
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import com.descartes.bowling.config.{AppConfig, DatabaseConfig, DbType}
-import com.descartes.bowling.domain.{BowlingGame, GameNotFoundError, Roll}
+import com.descartes.bowling.domain.{BowlingGame, DomainError, GameNotFoundError, Roll}
 import doobie.hikari.HikariTransactor
 import doobie.implicits.toSqlInterpolator
 import doobie.util.fragment
@@ -31,8 +31,11 @@ trait GameRepository {
 
   def deleteGame(id: Long): IO[Either[GameNotFoundError, Unit]]
 
-  def updateGameOpt(id: Long, g: Option[BowlingGame]): IO[Either[GameNotFoundError, BowlingGame]] = {
-    g.map(updateGame(id, _)).getOrElse({
+  def updateGameOpt(id: Long, g: Option[Either[DomainError,BowlingGame]]): IO[Either[DomainError, BowlingGame]] = {
+    g.map(gEither => gEither match {
+      case Left(e) => IO.pure(Left(e))
+      case Right(game) => updateGame(id, game)
+    }).getOrElse({
       logger.info("roll or update : game {} not found", id)
       IO.pure(Left(GameNotFoundError(id)))
     })

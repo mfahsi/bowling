@@ -85,7 +85,7 @@ class GameRoutesH2Test extends AnyWordSpec with Matchers {
       apiCall(Request[IO](PUT, uri"/api/game").withEntity(gameInfo.asJson))
       val response = apiCall(Request[IO](GET, Uri.unsafeFromString(s"/api/game/$id/score")))
       response.status shouldBe Status.BadRequest
-      response.as[ApiLayerError].unsafeRunSync() shouldBe((ApiLayerError("No final sore for game in progress",Some(id.toString))))
+      response.as[ApiLayerError].unsafeRunSync() shouldBe((ApiLayerError("Can't provide a final score on a pending game",Some(id.toString))))
     }
 
     "Return the Score of game is complete" in {

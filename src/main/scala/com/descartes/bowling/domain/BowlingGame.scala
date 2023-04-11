@@ -3,7 +3,7 @@ package com.descartes.bowling.domain
 import cats.Show
 import cats.implicits.toShow
 import com.descartes.bowling.api.domain.FrameInfo.RollPosition
-import com.descartes.bowling.domain.Roll.inferMarkers
+import com.descartes.bowling.domain.Roll.{encoder, inferMarkers}
 import com.descartes.bowling.service.ScoringService
 import io.circe.Encoder
 import io.circe.generic.semiauto.deriveEncoder
@@ -46,15 +46,6 @@ case class BowlingGame(id: Option[Long], frames: List[Frame] = List(), player: O
   def roll(framePos: Int, rollPost: RollPosition): Option[Roll] = frame(framePos).flatMap(_.roll(rollPost))
   def frame(framePos: Int): Option[Frame] = frames.lift(framePos)
 
-
-  def withMark(framePos: Int, newMarker: Char): BowlingGame = {
-    val updatedFrames = frames.zipWithIndex.map {
-      case (frame, index) if index == framePos => frame.withMark(0, newMarker)
-      case (frame, _) => frame
-    }
-    this.copy(frames = updatedFrames)
-  }
-
   def showGame: String = toString
 
   override def toString: String = {
@@ -66,20 +57,28 @@ case class BowlingGame(id: Option[Long], frames: List[Frame] = List(), player: O
       }
     s"Game(${nonEmptyFields.mkString(", ")})"
   }
-
-  def addedRoll(aRoll: Roll): BowlingGame = {
-    if (isComplete) {
-      throw new IllegalStateException("Game is complete already")
+// for testing
+ def addedRollUnsafe(aRoll: Roll): BowlingGame ={
+    addedRoll(aRoll) match {
+      case Left(e)=> throw new IllegalStateException(e.errorMessage())
+      case Right(g) => g
     }
-    val roll = inferMarkers(aRoll)
-    val isTenthFrame = frames.length == 10
+  }
+  def addedRoll(aRoll: Roll): Either[RollAttemptedGameComplete,BowlingGame] = {
+    if (isComplete) {
+      Left(RollAttemptedGameComplete(id.get))
+    }else {
 
-    if (frames.isEmpty || frames.last.isComplete(isTenthFrame)) {
-      val newFrame = Frame(List(roll))
-      this.copy(frames = frames :+ newFrame)
-    } else {
-      val newLastFrame = Frame(frames.last.rolls :+ roll)
-      this.copy(frames = frames.init :+ newLastFrame)
+      val roll = inferMarkers(aRoll)
+      val isTenthFrame = frames.length == 10
+
+      if (frames.isEmpty || frames.last.isComplete(isTenthFrame)) {
+        val newFrame = Frame(List(roll))
+        Right(this.copy(frames = frames :+ newFrame))
+      } else {
+        val newLastFrame = Frame(frames.last.rolls :+ roll)
+       Right(this.copy(frames = frames.init :+ newLastFrame))
+      }
     }
   }
 

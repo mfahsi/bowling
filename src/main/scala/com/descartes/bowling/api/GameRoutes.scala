@@ -5,7 +5,7 @@ import com.descartes.bowling.api.domain.ApiDomainConvertersions._
 import com.descartes.bowling.api.domain.{BowlingGameInfo, CreateGameRequest, RollInfo}
 import com.descartes.bowling.api.domain.ApiDomainConvertersions._
 import com.descartes.bowling.api.domain._
-import com.descartes.bowling.domain.{BowlingGame, DomainError, Frame, GameNotFoundError, Roll}
+import com.descartes.bowling.domain.{BowlingGame, DomainError, Frame, GameNotFoundError, IncompleteGameScoreAttempt, Roll, RollAttemptedGameComplete}
 import com.descartes.bowling.persistence.{GameRepository, GameRepositoryPostgres}
 import com.descartes.bowling.service.{GameService, ScoringService}
 import io.circe.Decoder
@@ -44,7 +44,7 @@ class GameRoutes(gameService: GameService, repository: GameRepository) extends H
            val converted = convert[BowlingGameInfo, BowlingGame](game.copy(id=Some(id)))
            for {
              updateResult <- repository.updateGame(converted.id.get, converted)
-             response <- gameResult2(updateResult)
+             response <- gameResult(updateResult)
            } yield response
          }
 
@@ -52,7 +52,7 @@ class GameRoutes(gameService: GameService, repository: GameRepository) extends H
       for {
         roll <- req.decodeJson[RollInfo]
         updateResult <- gameService.roll(id, convert[RollInfo,Roll](roll)) // convert to service model
-        response <- gameResult2(updateResult)
+        response <- gameResult(updateResult)
       } yield response
 
     case GET -> Root / "api" / "game" / LongVar(id) =>
@@ -85,13 +85,19 @@ class GameRoutes(gameService: GameService, repository: GameRepository) extends H
     }
   }
 
-  private def gameResult2(result: Either[GameNotFoundError, BowlingGame]) = {
+  private def gameResult(result: Either[DomainError, BowlingGame]) = {
     result match {
-      case Left(e) => NotFound(ApiDomainError(e))
+        case Left(e) => e match  {
+        case nf: GameNotFoundError => NotFound  (ApiDomainError (nf).asFlatApiLayer)
+        case r: IncompleteGameScoreAttempt => BadRequest (ApiDomainError (r).asFlatApiLayer)
+        case rc: RollAttemptedGameComplete => BadRequest (ApiDomainError (rc).asFlatApiLayer)
+        case err: DomainError => InternalServerError  (ApiDomainError (err).asFlatApiLayer)
+    }
       case Right(game) => {
         Ok(convert[BowlingGame, BowlingGameInfo](game).asJson)
       }
     }
+
   }
 
 
@@ -103,7 +109,7 @@ class GameRoutes(gameService: GameService, repository: GameRepository) extends H
         if(score.isDefined){
           Ok(score.get.asJson)
         }else{
-          BadRequest(ApiLayerError("No final sore for game in progress",g.id.map(_.toString)).asJson)
+          BadRequest(ApiDomainError(IncompleteGameScoreAttempt(g.id.get)).asFlatApiLayer)
         }
       }
     }

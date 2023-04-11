@@ -14,16 +14,7 @@ package object domain {
   val SPLIT = Some('S')
 
 
-  def rollShow(r: Roll, tenIsStrik: Boolean)(acc: Int = 0): Char = {
-    r.pins match {
-      case 10 => if (tenIsStrik) 'X' else '/'
-      case _ => if (acc + r.pins == 10) '/' else {
-        r.rollScore()
-      }
-    }
-  }
-
-  object jsonDerivation {
+   object jsonDerivation {
     implicit val customConfig: Configuration = Configuration.default.withDefaults
 
     implicit val rollInfoEncoder: Encoder.AsObject[RollInfo] = deriveConfiguredEncoder[RollInfo]

@@ -34,22 +34,22 @@ class ScoringServiceTest extends AnyFlatSpec with should.Matchers {
 
 
   "Frame Logic / Strike in middle" should "constitute new frame" in {
-    val aGame = BowlingGame(Some(1)).addedRoll(three).addedRoll(three).addedRoll(full).addedRoll(seven)
+    val aGame = BowlingGame(Some(1)).addedRoll(three).toOption.get.addedRoll(three).toOption.get.addedRoll(full).toOption.get.addedRoll(seven).toOption.get
     aGame.frames.length shouldBe (3)
     ScoringService.frameScores(aGame.frames) shouldBe (List(FrameScore(6, List(RollScore(3, None), RollScore(3, None))), FrameScore(10, List(RollScore(10, STRIKE))), FrameScore(7, List(RollScore(7, None)))))
   }
 
   "Completion Rules/Bonus - score SPARE at End" should "Bonus roll required for completion and add Bonus" in {
-    val game2 = aGameWithNineFrames.addedRoll(three).addedRoll(seven).addedRoll(three)
+    val game2 = aGameWithNineFrames.addedRollUnsafe(three).addedRollUnsafe(seven).addedRollUnsafe(three)
     game2.isComplete shouldBe (true)
     ScoringService.finalScore(game2) shouldBe (Some(67))
     ScoringService.finalScore(aGameWithNineFrames) shouldBe (empty) //incomplete game
   }
 
   "Display Rule - score normal and Split display" should "count spare bonus and show /" in {
-    val game2 = aGameWithNineFrames.addedRoll(split).addedRoll(three)
+    val game2 = aGameWithNineFrames.addedRollUnsafe(split).addedRollUnsafe(three)
     ScoringService.finalScore(game2) shouldBe (Some(62))
-    ScoringService.frameScores(aGameWithNineFrames.addedRoll(split).addedRoll(three).frames).last.rolls.head.marker should be(SPLIT)
+    ScoringService.frameScores(aGameWithNineFrames.addedRollUnsafe(split).addedRollUnsafe(three).frames).last.rolls.head.marker should be(SPLIT)
 
   }
 

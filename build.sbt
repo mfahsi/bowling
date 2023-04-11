@@ -13,8 +13,10 @@ lazy val commonSettings = Seq(
 )
 enablePlugins(
   JavaAppPackaging,
-  DockerPlugin
+  DockerPlugin,
+  ScoverageSbtPlugin
 )
+
 Compile / mainClass := Some("com.descartes.bowling.ServerApp")
 Docker / packageName := "fahsi/bowling-api"
 dockerExposedPorts ++= Seq(8086)
@@ -95,3 +97,10 @@ resolvers ++= Seq(
 )
 
 Test / parallelExecution := false
+coverageDataDir := target.value / "coverage"
+coverageExcludedPackages := "<empty>;com.descartes.bowling;" //temporarily exclude main
+coverageFailOnMinimum := true
+coverageMinimumStmtTotal := 80
+coverageMinimumStmtPerPackage := 67 //TODO find a way to test postgres json specific or push to config
+
+

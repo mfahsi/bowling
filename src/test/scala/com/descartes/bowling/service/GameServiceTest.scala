@@ -24,15 +24,12 @@ class GameServiceTest extends AnyFlatSpec with should.Matchers {
     result.getOrElse(null).roll(0, 0) should be(Some(Roll(2, Some('S'))))
 
   }
-  it should "return IllegalStateException if game is complete" in {
+  it should "return RollAttemptedGameComplete if game is complete before the roll" in {
     val gid = repository.insert(BowlingGame(None, List(), Some("Ember"), Some("lane 2"))).unsafeRunSync()
     import com.descartes.bowling.domain.BowlingGame.dsl._
     val full10FrameGame = frameN(10)(rolls(2, 6))
     repository.updateGame(gid, BowlingGame(id = Some(gid), frames = full10FrameGame)).unsafeRunSync()
-    // gameservice.roll(gid, Roll(2, Some('S'))).unsafeRunSync()
-    assertThrows[IllegalStateException] {
-      gameservice.roll(gid, Roll(10)).unsafeRunSync()
-    }
+    gameservice.roll(gid, Roll(10)).unsafeRunSync().left.toOption.get shouldBe a [RollAttemptedGameComplete]
   }
 
   it should "return GameNotFoundError if game does not exist" in {

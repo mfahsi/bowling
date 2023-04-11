@@ -16,5 +16,4 @@ case class RollInfo(pins: Int, marker: Option[Char] = None, uid: Option[String] 
 object RollInfo {
   implicit val decoder: Decoder[RollInfo] = deriveDecoder[RollInfo]
   implicit val encoder: Encoder[RollInfo] = deriveEncoder[RollInfo].mapJson(_.dropNullValues)
-
 }

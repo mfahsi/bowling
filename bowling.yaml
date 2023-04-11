@@ -1,7 +1,7 @@
-openapi: 3.0.0
+openapi: 3.0.1
 info:
-  title: Bowling Game API
-  version: 1.0.0
+  title: Bowling API
+  version: "1.0"
 paths:
   /api/game:
     post:
@@ -13,17 +13,28 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateGameRequest'
       responses:
-        201:
+        '201':
           description: Game created successfully
           content:
             application/json:
               schema:
                 type: integer
                 format: int64
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
+                description: ID of the created game
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/game/{id}:
     put:
-      summary: Update an existing game
+      summary: Update a game
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the game to update
       requestBody:
         required: true
         content:
@@ -31,163 +42,184 @@ paths:
             schema:
               $ref: '#/components/schemas/BowlingGameInfo'
       responses:
-        200:
+        '200':
           description: Game updated successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BowlingGameInfo'
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
-  /api/game/roll:
+    get:
+      summary: Get a game by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the game to retrieve
+      responses:
+        '200':
+          description: Game retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BowlingGameInfo'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/game/{id}/roll:
     put:
-      summary: Perform a roll in a game
+      summary: Add a roll to a game
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            format: int64
+          required: true
+          description: ID of the game to add a roll to
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RollRequest'
+              $ref: '#/components/schemas/RollInfo'
       responses:
-        200:
-          description: Roll performed successfully
+        '200':
+          description: Roll added successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BowlingGameInfo'
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
-
-  /api/game/{id}:
-    get:
-      summary: Retrieve a game by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: Game found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BowlingGameInfo'
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
-    delete:
-      summary: Delete a game by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: Game deleted successfully
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/game/{id}/score:
     get:
-      summary: Retrieve the score for a game by ID
+      summary: Get the score for a game
       parameters:
-        - name: id
-          in: path
-          required: true
+        - in: path
+          name: id
           schema:
             type: integer
             format: int64
+          required: true
+          description: ID of the game to get the score for
       responses:
-        200:
-          description: Game score retrieved successfully
+        '200':
+          description: Score retrieved successfully
           content:
             application/json:
               schema:
                 type: integer
                 format: int32
-        default:
-          $ref: '#/components/responses/ApiErrorResponse'
+                description: Score for the game
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
-components:
-  schemas:
-    CreateGameRequest:
-      type: object
-      properties:
-        uid:
-          type: string
-        game:
-          $ref: '#/components/schemas/BowlingGameInfo'
-    BowlingGameInfo:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/FrameInfo'
-        player:
-          type: string
-        lane:
-          type:string
-        gameSet:
-          type: integer
-          format: int64
-
-        FrameInfo:
-          type: object
-          properties:
-            rolls:
-              type: array
-              items:
-                $ref: '#/components/schemas/RollInfo'
-        RollInfo:
-          type: object
-          properties:
-            pins:
-              type: integer
-              format: int32
-            marker:
-              type: string
-              nullable: true
-            uid:
-              type: string
-              nullable: true
-
-        RollRequest:
-          type: object
-          properties:
-            gameId:
+    /api/game/{id}:
+      delete:
+        summary: Delete a game by ID
+        parameters:
+          - in: path
+            name: id
+            schema:
               type: integer
               format: int64
-            roll:
-              $ref: '#/components/schemas/RollInfo'
-            uid:
-              type: string
-              nullable: true
-
+            required: true
+            description: ID of the game to delete
         responses:
-          ApiErrorResponse:
-            description: Generic error response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ApiLayerError'
+          '200':
+            description: Game deleted successfully
+          '404':
+            $ref: '#/components/responses/NotFound'
 
-        schemas:
-          ApiLayerError:
-            type: object
-            properties:
-              error:
-                type: string
-              ref:
-                type: string
-                nullable: true
+  components:
+    schemas:
+      CreateGameRequest:
+        type: object
+        properties:
+          game:
+            $ref: '#/components/schemas/BowlingGameInfo'
+          uid:
+            type: string
+            format: uuid
+            nullable: true
 
+      BowlingGameInfo:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+            nullable: true
+          frames:
+            type: array
+            items:
+              $ref: '#/components/schemas/FrameInfo'
+          player:
+            type: string
+            nullable: true
+          lane:
+            type: string
+            nullable: true
+          gameSet:
+            type: integer
+            format: int64
+            nullable: true
+
+      FrameInfo:
+        type: object
+        properties:
+          rolls:
+            type: array
+            items:
+              $ref: '#/components/schemas/RollInfo'
+
+      RollInfo:
+        type: object
+        properties:
+          pins:
+            type: integer
+            format: int32
+          marker:
+            type: string
+            nullable: true
+          uid:
+            type: string
+            format: uuid
+            nullable: true
+
+    responses:
+      BadRequest:
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiLayerError'
+
+      NotFound:
+        description: Not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiLayerError'
+
+    ApiLayerError:
+      type: object
+      properties:
+        error:
+          type: string
+        ref:
+          type: string
+          nullable: true
