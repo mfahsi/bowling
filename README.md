@@ -176,7 +176,7 @@ curl -X GET http://localhost:8086/api/game/9999
 Response :
 Empty Body, Status NotFound 404
 
-#### Update the game (Not required by specs but needed to implement ROLL)
+#### Update the game (updates frames only)
 ```bash
 curl -X PUT -H "Content-Type: application/json" -d '{"player": "Jane", "lane":"3", "frames":[{"rolls":[{"pins":5},{"pins":0,"marker":"-"}]},{"rolls":[{"pins":7},{"pins":0, "marker":"F"}]}]}' http://localhost:8086/api/game/1
 ```
@@ -206,18 +206,24 @@ Response:
 ```bash
 Repeat until reaching 10 frames: curl -X PUT -H "Content-Type: application/json" -d '{"pins": 10}' http://localhost:8086/api/game/1/roll
 ```
-Response : Illegal State, Empty body with status 
+Response : BadRequest
+```json
+{"error":"Can't roll on a complete game","ref":"1"}
+```
 
-#### Get final score // this fails if game is incomplete. there is an other unexposed function to get frame per frame score for incomplete games as well.
+#### Get final score (game incomplete case)
 curl -X GET http://localhost:8086/api/game/1/score
 Response:
 ```json
-{"error":"Can't provide a final score a pending game","ref":"1"}
+{"error":"Can't provide a final score on a pending game","ref":"1"}
 ```
-#### Get final score 
+#### Get final score  (game complete case)
 160
 #### Delete the game
+```bash
 curl -X DELETE http://localhost:8086/api/game/1
+```
+Response : Empty Body with 200 or 404
 
 ### TODOs
 - docker is using host networking mode which does not provide good isolation. TODO change to Bridge mode.
